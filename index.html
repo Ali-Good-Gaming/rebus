@@ -318,21 +318,17 @@
     <!-- JAVASCRIPT LOGIC -->
     <script>
         // ================= ДАННЫЕ ИГРЫ =================
-        // Здесь можно добавлять свои картинки и слова
-        // image: ссылка на картинку (локально будет 'assets/assets/image1.jpg')
-        const REBUS_DATA = [
-            { id: 'img1', answer: 'Куба', hint: 'Остров коммунизма', image: 'assets/image1.jpg' },
-            { id: 'img2', answer: 'Гроза', hint: 'Природное явление с молниями', image: 'https://placehold.co/600x400/222/fff?text=РОЗА+%2B+Г+(в+начале)' },
-            { id: 'img3', answer: 'Волк', hint: 'Санитар леса', image: 'https://placehold.co/600x400/222/fff?text=ВОЛ+%2B+К' },
-            { id: 'img4', answer: 'Семья', hint: '7 + Я', image: 'https://placehold.co/600x400/222/fff?text=7Я' },
-            { id: 'img5', answer: 'Столб', hint: 'Опора ЛЭП', image: 'https://placehold.co/600x400/222/fff?text=100+%2B+ЛБ' },
-            { id: 'img6', answer: 'Экран', hint: 'Куда вы сейчас смотрите', image: 'https://placehold.co/600x400/222/fff?text=КРАН+%2B+Э' },
-            { id: 'img7', answer: 'Крот', hint: 'Слепой копатель', image: 'https://placehold.co/600x400/222/fff?text=РОТ+%2B+К' },
-            { id: 'img8', answer: 'Сорока', hint: 'Белобока', image: 'https://placehold.co/600x400/222/fff?text=40+%2B+А' },
-            { id: 'img9', answer: 'Ворон', hint: 'Мудрая птица', image: 'https://placehold.co/600x400/222/fff?text=ВОР+%2B+ОН' },
-            { id: 'img10', answer: 'Тигр', hint: 'Полосатый хищник', image: 'https://placehold.co/600x400/222/fff?text=ТИР+%2B+Г' }
-        ];
-
+// image: локальный путь к картинке
+const REBUS_DATA = [
+    { id: 'img1', answer: 'Куба', hint: 'Остров коммунизма', image: 'assets/image1.jpg' },
+    { id: 'img2', answer: 'Любовь', hint: 'Сильное чувство', image: 'assets/image2.jpg' },
+    { id: 'img3', answer: 'Бананы', hint: 'Жёлтые фрукты', image: 'assets/image3.jpg' },
+    { id: 'img4', answer: 'Водка', hint: 'Крепкий напиток', image: 'assets/image4.jpg' },
+    { id: 'img5', answer: 'Пожар', hint: 'Опасный огонь', image: 'assets/image5.jpg' },
+    { id: 'img6', answer: 'Австрия', hint: 'Страна в Европе', image: 'assets/image6.jpg' },
+    { id: 'img7', answer: 'Дружба', hint: 'Крепкие отношения', image: 'assets/image7.jpg' },
+    { id: 'img8', answer: 'Поднос', hint: 'Для подачи еды', image: 'assets/image8.jpg' }
+];
         // ================= АУДИО СИСТЕМА =================
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
