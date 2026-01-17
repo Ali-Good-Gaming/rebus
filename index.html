@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ребус Мастер - Ali_Good_Gaming</title>
+    <!-- Tailwind CSS для стилей -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome для иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden; /* Чтобы скролл не мешал фону */
+        }
+
+        /* Анимация тряски для неверного ответа */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+        .shake-element {
+            animation: shake 0.4s ease-in-out;
+            border-color: #ef4444 !important; /* Красная рамка */
+        }
+
+        /* Плавные переходы для экранов */
+        .screen {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .screen.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* Стилизация скроллбара для таблицы рекордов */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 100, 100, 0.5);
+            border-radius: 4px;
+        }
+
+        /* Интерактивный фон */
+        #bg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1', // Indigo 500
+                        secondary: '#ec4899', // Pink 500
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-900 text-white transition-colors duration-300 h-screen w-screen flex flex-col items-center justify-center relative select-none">
+
+    <!-- Фоновый Canvas -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Основной контейнер UI -->
+    <div id="app-container" class="relative z-10 w-full max-w-4xl p-4 flex flex-col items-center justify-center h-full">
+
+        <!-- ГЛАВНОЕ МЕНЮ -->
+        <div id="screen-menu" class="screen active flex-col items-center justify-center w-full h-full text-center space-y-6">
+            <h1 class="text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary drop-shadow-lg transform transition hover:scale-105 duration-300 cursor-default">
+                РЕБУС
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-400 font-bold tracking-widest uppercase">
+                from Ali_Good_Gaming
+            </p>
+
+            <div class="flex flex-col space-y-4 w-full max-w-xs mt-8">
+                <button onclick="game.goToModeSelect()" class="py-4 px-8 bg-white text-gray-900 font-bold rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.6)] hover:scale-105 transition transform text-xl">
+                    <i class="fas fa-play mr-2"></i> ИГРАТЬ
+                </button>
+                <button onclick="game.showRecords()" class="py-3 px-8 bg-gray-800 border-2 border-gray-600 rounded-full hover:bg-gray-700 hover:border-white transition font-semibold">
+                    <i class="fas fa-trophy mr-2 text-yellow-400"></i> РЕКОРДЫ
+                </button>
+                <button onclick="game.showSettings()" class="py-3 px-8 bg-gray-800 border-2 border-gray-600 rounded-full hover:bg-gray-700 hover:border-white transition font-semibold">
+                    <i class="fas fa-cog mr-2"></i> НАСТРОЙКИ
+                </button>
+            </div>
+
+            <!-- Социальные сети -->
+            <div class="absolute bottom-10 flex space-x-8 mt-12">
+                <a href="https://youtube.com/@ali-gg?si=ua0XEhBtC0Pw5x7D" target="_blank" class="text-4xl hover:text-red-600 transition transform hover:scale-125 duration-300">
+                    <i class="fab fa-youtube"></i>
+                </a>
+                <a href="https://t.me/aligoodgaming" target="_blank" class="text-4xl hover:text-blue-400 transition transform hover:scale-125 duration-300">
+                    <i class="fab fa-telegram"></i>
+                </a>
+                <a href="https://www.tiktok.com/@ali_goodgaming?_r=1&_t=ZS-92vefrVyLnp" target="_blank" class="text-4xl hover:text-pink-500 transition transform hover:scale-125 duration-300">
+                    <i class="fab fa-tiktok"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- ВЫБОР РЕЖИМА -->
+        <div id="screen-modes" class="screen flex-col items-center justify-center w-full h-full text-center space-y-8">
+            <h2 class="text-4xl font-bold mb-8">Выберите режим</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+                <!-- Классика -->
+                <div onclick="game.startClassic()" class="bg-gray-800 bg-opacity-80 p-8 rounded-2xl border-2 border-transparent hover:border-primary hover:bg-opacity-100 cursor-pointer transition transform hover:-translate-y-2 shadow-xl group">
+                    <i class="fas fa-layer-group text-5xl mb-4 text-primary group-hover:scale-110 transition"></i>
+                    <h3 class="text-2xl font-bold mb-2">Классика</h3>
+                    <p class="text-gray-400 text-sm">Проидите все доступные ребусы в спокойном темпе.</p>
+                </div>
+
+                <!-- На время -->
+                <div id="time-attack-card" class="bg-gray-800 bg-opacity-80 p-8 rounded-2xl border-2 border-transparent hover:border-secondary hover:bg-opacity-100 transition transform hover:-translate-y-2 shadow-xl cursor-default">
+                    <i class="fas fa-stopwatch text-5xl mb-4 text-secondary"></i>
+                    <h3 class="text-2xl font-bold mb-2">На время</h3>
+                    <p class="text-gray-400 text-sm mb-4">Выберите количество ребусов:</p>
+                    
+                    <div class="flex items-center justify-center space-x-2">
+                        <input type="number" id="rebus-count" min="1" max="10" value="5" 
+                            class="w-16 bg-gray-700 text-white text-center rounded-lg p-2 font-bold focus:outline-none focus:ring-2 focus:ring-secondary">
+                        <span class="text-xl font-bold">/ <span id="max-rebuses">10</span></span>
+                    </div>
+                    
+                    <button onclick="game.startTimeAttack()" class="mt-4 py-2 px-6 bg-secondary rounded-full font-bold hover:bg-pink-600 transition w-full">
+                        НАЧАТЬ
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="game.goBack()" class="mt-8 text-gray-400 hover:text-white transition flex items-center">
+                <i class="fas fa-arrow-left mr-2"></i> Назад
+            </button>
+        </div>
+
+        <!-- ИГРОВОЙ ЭКРАН -->
+        <div id="screen-game" class="screen flex-col items-center justify-start w-full h-full pt-4 md:pt-10">
+            <!-- Верхняя панель -->
+            <div class="w-full flex justify-between items-center mb-6 px-4">
+                <button onclick="game.confirmExit()" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-arrow-left fa-lg"></i>
+                </button>
+                
+                <div class="flex items-center space-x-6">
+                    <div class="flex flex-col items-center">
+                        <span class="text-xs text-gray-400 uppercase font-bold">Уровень</span>
+                        <span class="text-xl font-bold"><span id="current-level">1</span>/<span id="total-levels">10</span></span>
+                    </div>
+                    <div id="timer-container" class="flex flex-col items-center hidden">
+                        <span class="text-xs text-gray-400 uppercase font-bold">Время</span>
+                        <span id="timer-display" class="text-xl font-mono text-secondary font-bold">00:00</span>
+                    </div>
+                </div>
+
+                <div class="w-8"></div> <!-- Spacer for center alignment -->
+            </div>
+
+            <!-- Контент игры -->
+            <div class="flex flex-col items-center w-full max-w-2xl bg-gray-800 bg-opacity-90 rounded-3xl p-6 shadow-2xl backdrop-blur-sm border border-gray-700">
+                
+                <!-- Изображение ребуса -->
+                <div class="w-full h-64 md:h-80 bg-gray-900 rounded-xl mb-6 overflow-hidden flex items-center justify-center relative border border-gray-600">
+                     <!-- 
+                        ВАЖНО: Здесь будет картинка. 
+                        Если картинка не загрузится, будет показан заглушка.
+                     -->
+                    <img id="game-image" src="" alt="Ребус" class="w-full h-full object-contain z-10" onerror="this.onerror=null; this.src='https://placehold.co/600x400/202020/FFFFFF?text=Нет+изображения';">
+                    
+                    <!-- Лоадер/Плейсхолдер -->
+                    <div class="absolute inset-0 flex items-center justify-center text-gray-600">
+                        <i class="fas fa-image text-4xl"></i>
+                    </div>
+                </div>
+
+                <!-- Подсказка -->
+                <div id="hint-text" class="mb-4 text-yellow-400 font-medium italic hidden h-6">
+                    <!-- Текст подсказки появится здесь -->
+                </div>
+
+                <!-- Поле ввода -->
+                <div class="w-full flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3">
+                    <input type="text" id="answer-input" placeholder="Введите ответ..." autocomplete="off"
+                        class="flex-1 bg-gray-700 text-white p-4 rounded-xl text-lg font-bold border-2 border-transparent focus:outline-none focus:border-primary transition text-center md:text-left uppercase placeholder-gray-500">
+                    
+                    <button onclick="game.checkAnswer()" class="bg-primary hover:bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold transition shadow-lg flex items-center justify-center">
+                        <i class="fas fa-check mr-2"></i> OK
+                    </button>
+                </div>
+
+                <!-- Кнопки помощи -->
+                <div class="w-full flex justify-between mt-6">
+                    <button onclick="game.useHint()" class="text-sm font-bold text-yellow-500 hover:text-yellow-400 flex items-center transition">
+                        <i class="fas fa-lightbulb mr-2"></i> ПОДСКАЗКА
+                    </button>
+                    <!-- Кнопка Пропустить (только для классики можно добавить, но по ТЗ не просили, поэтому скроем или оставим) -->
+                </div>
+            </div>
+        </div>
+
+        <!-- РЕЗУЛЬТАТЫ (ПОБЕДА) -->
+        <div id="screen-result" class="screen flex-col items-center justify-center w-full h-full text-center space-y-6">
+            <i class="fas fa-flag-checkered text-6xl text-green-400 mb-4 animate-bounce"></i>
+            <h2 class="text-5xl font-bold">ПОБЕДА!</h2>
+            
+            <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-md">
+                <p class="text-gray-400 mb-2">Ваше время:</p>
+                <p id="final-time" class="text-4xl font-mono font-bold text-white mb-6">00:00</p>
+                
+                <div id="save-score-form">
+                    <p class="text-sm text-gray-400 mb-2">Введите имя для рекорда:</p>
+                    <input type="text" id="player-name" maxlength="15" placeholder="ВАШЕ ИМЯ" 
+                        class="w-full bg-gray-700 text-white p-3 rounded-lg text-center font-bold mb-4 uppercase focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <button onclick="game.saveRecord()" class="w-full py-3 bg-green-500 hover:bg-green-600 rounded-lg font-bold transition">
+                        СОХРАНИТЬ
+                    </button>
+                </div>
+                <div id="score-saved-msg" class="hidden text-green-400 font-bold">
+                    <i class="fas fa-check-circle mr-2"></i> Результат сохранен!
+                </div>
+            </div>
+
+            <button onclick="game.goHome()" class="mt-4 py-2 px-6 border-2 border-gray-600 rounded-full hover:bg-gray-700 transition">
+                В Меню
+            </button>
+        </div>
+
+        <!-- ТАБЛИЦА РЕКОРДОВ -->
+        <div id="screen-records" class="screen flex-col items-center justify-center w-full h-full text-center">
+            <h2 class="text-4xl font-bold mb-8 text-yellow-400"><i class="fas fa-crown mr-3"></i>РЕКОРДЫ</h2>
+            
+            <div class="bg-gray-800 bg-opacity-90 w-full max-w-lg rounded-2xl p-6 shadow-2xl max-h-[60vh] overflow-y-auto">
+                <table class="w-full text-left">
+                    <thead class="text-gray-400 border-b border-gray-700">
+                        <tr>
+                            <th class="pb-3 pl-2">#</th>
+                            <th class="pb-3">Имя</th>
+                            <th class="pb-3">Ребусов</th>
+                            <th class="pb-3 text-right pr-2">Время</th>
+                        </tr>
+                    </thead>
+                    <tbody id="records-list" class="divide-y divide-gray-700">
+                        <!-- Сюда JS вставит рекорды -->
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-gray-500">Пока нет рекордов</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-8 flex space-x-4">
+                <button onclick="game.clearRecords()" class="text-red-400 hover:text-red-300 text-sm font-bold">
+                    Сбросить
+                </button>
+                <button onclick="game.goHome()" class="py-2 px-8 bg-white text-gray-900 rounded-full font-bold hover:scale-105 transition">
+                    Назад
+                </button>
+            </div>
+        </div>
+
+        <!-- НАСТРОЙКИ -->
+        <div id="screen-settings" class="screen flex-col items-center justify-center w-full h-full text-center">
+            <h2 class="text-4xl font-bold mb-8">НАСТРОЙКИ</h2>
+            
+            <div class="bg-gray-800 bg-opacity-90 w-full max-w-md rounded-2xl p-8 shadow-2xl space-y-8">
+                
+                <!-- Тема -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-palette text-2xl mr-4 text-primary"></i>
+                        <span class="text-xl font-bold">Тема</span>
+                    </div>
+                    <button onclick="settings.toggleTheme()" id="theme-btn" class="relative w-16 h-8 bg-gray-600 rounded-full transition duration-300 focus:outline-none">
+                        <div id="theme-toggle" class="absolute left-1 top-1 w-6 h-6 bg-white rounded-full transition-transform duration-300"></div>
+                    </button>
+                </div>
+
+                <!-- Звук -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i id="sound-icon" class="fas fa-volume-up text-2xl mr-4 text-green-400"></i>
+                        <span class="text-xl font-bold">Звук</span>
+                    </div>
+                    <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5" 
+                        class="w-32 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-primary" oninput="settings.setVolume(this.value)">
+                </div>
+
+            </div>
+
+            <button onclick="game.goBack()" class="mt-8 py-2 px-8 bg-white text-gray-900 rounded-full font-bold hover:scale-105 transition">
+                Назад
+            </button>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // ================= ДАННЫЕ ИГРЫ =================
+        // Здесь можно добавлять свои картинки и слова
+        // image: ссылка на картинку (локально будет 'assets/image1.jpg')
+        const REBUS_DATA = [
+            { id: 'img1', answer: 'Куба', hint: 'Остров свободы', image: 'https://placehold.co/600x400/222/fff?text=КУБ+%2B+А' },
+            { id: 'img2', answer: 'Гроза', hint: 'Природное явление с молниями', image: 'https://placehold.co/600x400/222/fff?text=РОЗА+%2B+Г+(в+начале)' },
+            { id: 'img3', answer: 'Волк', hint: 'Санитар леса', image: 'https://placehold.co/600x400/222/fff?text=ВОЛ+%2B+К' },
+            { id: 'img4', answer: 'Семья', hint: '7 + Я', image: 'https://placehold.co/600x400/222/fff?text=7Я' },
+            { id: 'img5', answer: 'Столб', hint: 'Опора ЛЭП', image: 'https://placehold.co/600x400/222/fff?text=100+%2B+ЛБ' },
+            { id: 'img6', answer: 'Экран', hint: 'Куда вы сейчас смотрите', image: 'https://placehold.co/600x400/222/fff?text=КРАН+%2B+Э' },
+            { id: 'img7', answer: 'Крот', hint: 'Слепой копатель', image: 'https://placehold.co/600x400/222/fff?text=РОТ+%2B+К' },
+            { id: 'img8', answer: 'Сорока', hint: 'Белобока', image: 'https://placehold.co/600x400/222/fff?text=40+%2B+А' },
+            { id: 'img9', answer: 'Ворон', hint: 'Мудрая птица', image: 'https://placehold.co/600x400/222/fff?text=ВОР+%2B+ОН' },
+            { id: 'img10', answer: 'Тигр', hint: 'Полосатый хищник', image: 'https://placehold.co/600x400/222/fff?text=ТИР+%2B+Г' }
+        ];
+
+        // ================= АУДИО СИСТЕМА =================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const Sound = {
+            volume: 0.5,
+            
+            playTone: (freq, type, duration) => {
+                if (Sound.volume <= 0) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(Sound.volume * 0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            },
+
+            correct: () => {
+                Sound.playTone(600, 'sine', 0.1);
+                setTimeout(() => Sound.playTone(900, 'sine', 0.2), 100);
+            },
+            wrong: () => {
+                Sound.playTone(150, 'sawtooth', 0.3);
+            },
+            click: () => {
+                Sound.playTone(800, 'triangle', 0.05);
+            },
+            win: () => {
+                [500, 700, 900, 1200].forEach((f, i) => setTimeout(() => Sound.playTone(f, 'square', 0.2), i * 150));
+            }
+        };
+
+        // ================= НАСТРОЙКИ =================
+        const settings = {
+            isDark: true,
+            
+            init() {
+                // Загрузка темы из LocalStorage
+                const savedTheme = localStorage.getItem('rebusTheme');
+                if (savedTheme === 'light') {
+                    this.setTheme(false);
+                } else {
+                    this.setTheme(true);
+                }
+                
+                // Инициализация ползунка громкости
+                document.getElementById('volume-slider').value = Sound.volume;
+            },
+
+            toggleTheme() {
+                this.setTheme(!this.isDark);
+                Sound.click();
+            },
+
+            setTheme(isDark) {
+                this.isDark = isDark;
+                const body = document.body;
+                const toggle = document.getElementById('theme-toggle');
+                
+                if (isDark) {
+                    body.classList.remove('bg-gray-100', 'text-gray-900');
+                    body.classList.add('bg-gray-900', 'text-white');
+                    toggle.style.transform = 'translateX(0)';
+                    localStorage.setItem('rebusTheme', 'dark');
+                } else {
+                    body.classList.remove('bg-gray-900', 'text-white');
+                    body.classList.add('bg-gray-100', 'text-gray-900');
+                    toggle.style.transform = 'translateX(32px)'; // Сдвиг переключателя
+                    localStorage.setItem('rebusTheme', 'light');
+                }
+                
+                // Обновляем цвет частиц фона
+                background.updateTheme(isDark);
+            },
+
+            setVolume(val) {
+                Sound.volume = parseFloat(val);
+                const icon = document.getElementById('sound-icon');
+                if (Sound.volume === 0) icon.className = "fas fa-volume-mute text-2xl mr-4 text-gray-400";
+                else icon.className = "fas fa-volume-up text-2xl mr-4 text-green-400";
+            }
+        };
+
+        // ================= ЛОГИКА ИГРЫ =================
+        const game = {
+            currentScreen: 'screen-menu',
+            mode: null, // 'classic' or 'time'
+            questions: [],
+            currentIndex: 0,
+            score: 0,
+            startTime: 0,
+            timerInterval: null,
+            totalLevels: 0,
+
+            init() {
+                this.updateMaxRebuses();
+                settings.init();
+                background.init();
+                
+                // Слушатель Enter для ввода
+                document.getElementById('answer-input').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') game.checkAnswer();
+                });
+
+                // Инициализация AudioContext по первому клику
+                document.body.addEventListener('click', () => {
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+                }, { once: true });
+            },
+
+            updateMaxRebuses() {
+                document.getElementById('max-rebuses').innerText = REBUS_DATA.length;
+                document.getElementById('rebus-count').max = REBUS_DATA.length;
+            },
+
+            showScreen(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(id).classList.add('active');
+                this.currentScreen = id;
+                Sound.click();
+            },
+
+            goHome() {
+                this.stopTimer();
+                this.showScreen('screen-menu');
+            },
+
+            goToModeSelect() {
+                this.showScreen('screen-modes');
+            },
+
+            goBack() {
+                if (this.currentScreen === 'screen-game') this.confirmExit();
+                else this.goHome();
+            },
+
+            confirmExit() {
+                // В реальном приложении можно добавить модальное окно подтверждения
+                this.goHome();
+            },
+
+            showRecords() {
+                this.renderRecords();
+                this.showScreen('screen-records');
+            },
+
+            showSettings() {
+                this.showScreen('screen-settings');
+            },
+
+            // --- Запуск игры ---
+
+            startClassic() {
+                this.mode = 'classic';
+                this.questions = [...REBUS_DATA]; // Копия всех вопросов
+                this.startGameCommon();
+            },
+
+            startTimeAttack() {
+                const countInput = document.getElementById('rebus-count');
+                let count = parseInt(countInput.value);
+                if (isNaN(count) || count < 1) count = 1;
+                if (count > REBUS_DATA.length) count = REBUS_DATA.length;
+
+                this.mode = 'time';
+                // Перемешиваем и берем N вопросов
+                this.questions = [...REBUS_DATA].sort(() => 0.5 - Math.random()).slice(0, count);
+                this.startGameCommon();
+            },
+
+            startGameCommon() {
+                this.currentIndex = 0;
+                this.totalLevels = this.questions.length;
+                
+                document.getElementById('total-levels').innerText = this.totalLevels;
+                document.getElementById('timer-container').classList.toggle('hidden', this.mode !== 'time');
+                
+                this.showScreen('screen-game');
+                this.loadLevel();
+
+                if (this.mode === 'time') {
+                    this.startTime = Date.now();
+                    this.startTimer();
+                }
+            },
+
+            loadLevel() {
+                const data = this.questions[this.currentIndex];
+                document.getElementById('current-level').innerText = this.currentIndex + 1;
+                document.getElementById('game-image').src = data.image;
+                document.getElementById('answer-input').value = '';
+                document.getElementById('answer-input').focus();
+                
+                // Сброс подсказки
+                const hintEl = document.getElementById('hint-text');
+                hintEl.classList.add('hidden');
+                hintEl.innerText = '';
+            },
+
+            startTimer() {
+                const timerDisplay = document.getElementById('timer-display');
+                this.timerInterval = setInterval(() => {
+                    const diff = Date.now() - this.startTime;
+                    const mins = Math.floor(diff / 60000);
+                    const secs = Math.floor((diff % 60000) / 1000);
+                    const mills = Math.floor((diff % 1000) / 10);
+                    timerDisplay.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                }, 100);
+            },
+
+            stopTimer() {
+                clearInterval(this.timerInterval);
+            },
+
+            // --- Игровая механика ---
+
+            useHint() {
+                const data = this.questions[this.currentIndex];
+                const hintEl = document.getElementById('hint-text');
+                hintEl.innerText = data.hint;
+                hintEl.classList.remove('hidden');
+                Sound.click();
+            },
+
+            checkAnswer() {
+                const input = document.getElementById('answer-input');
+                const userText = input.value.trim().toLowerCase();
+                const correctAnswer = this.questions[this.currentIndex].answer.toLowerCase();
+
+                if (userText === correctAnswer) {
+                    this.handleCorrect();
+                } else {
+                    this.handleWrong(input);
+                }
+            },
+
+            handleCorrect() {
+                Sound.correct();
+                this.currentIndex++;
+                
+                if (this.currentIndex >= this.totalLevels) {
+                    this.endGame();
+                } else {
+                    // Небольшая задержка перед следующим уровнем
+                    setTimeout(() => {
+                        this.loadLevel();
+                    }, 300);
+                }
+            },
+
+            handleWrong(element) {
+                Sound.wrong();
+                // Добавляем класс анимации
+                element.classList.add('shake-element');
+                
+                // Очищаем поле через небольшую паузу и убираем класс
+                setTimeout(() => {
+                    element.classList.remove('shake-element');
+                    element.value = '';
+                    element.focus();
+                }, 400);
+            },
+
+            endGame() {
+                this.stopTimer();
+                let timeStr = "---";
+                if (this.mode === 'time') {
+                    const diff = Date.now() - this.startTime;
+                    const mins = Math.floor(diff / 60000);
+                    const secs = Math.floor((diff % 60000) / 1000);
+                    timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                    
+                    // Показываем форму сохранения только для режима на время
+                    document.getElementById('save-score-form').classList.remove('hidden');
+                    document.getElementById('score-saved-msg').classList.add('hidden');
+                } else {
+                    document.getElementById('save-score-form').classList.add('hidden');
+                }
+
+                document.getElementById('final-time').innerText = timeStr;
+                Sound.win();
+                this.showScreen('screen-result');
+            },
+
+            // --- Рекорды ---
+
+            saveRecord() {
+                const nameInput = document.getElementById('player-name');
+                const name = nameInput.value.trim() || 'АНОНИМ';
+                const timeStr = document.getElementById('final-time').innerText;
+                const count = this.totalLevels;
+
+                const newRecord = { name, time: timeStr, count, date: Date.now() };
+                
+                let records = JSON.parse(localStorage.getItem('rebusRecords') || '[]');
+                records.push(newRecord);
+                
+                // Сортировка: сначала больше ребусов, потом меньше время (простая сортировка строк работает для MM:SS корректно)
+                records.sort((a, b) => {
+                    if (b.count !== a.count) return b.count - a.count;
+                    return a.time.localeCompare(b.time);
+                });
+
+                // Оставляем топ 10
+                records = records.slice(0, 10);
+                localStorage.setItem('rebusRecords', JSON.stringify(records));
+
+                // UI
+                document.getElementById('save-score-form').classList.add('hidden');
+                document.getElementById('score-saved-msg').classList.remove('hidden');
+                Sound.correct();
+            },
+
+            renderRecords() {
+                const tbody = document.getElementById('records-list');
+                const records = JSON.parse(localStorage.getItem('rebusRecords') || '[]');
+                
+                tbody.innerHTML = '';
+                
+                if (records.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500">Пока нет рекордов</td></tr>';
+                    return;
+                }
+
+                records.forEach((rec, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = index < 3 ? 'text-yellow-400 font-bold' : 'text-gray-300';
+                    tr.innerHTML = `
+                        <td class="py-2 pl-2">${index + 1}</td>
+                        <td class="py-2">${rec.name}</td>
+                        <td class="py-2">${rec.count}</td>
+                        <td class="py-2 text-right pr-2 font-mono">${rec.time}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            },
+
+            clearRecords() {
+                if(confirm('Точно удалить все рекорды?')) {
+                    localStorage.removeItem('rebusRecords');
+                    this.renderRecords();
+                }
+            }
+        };
+
+        // ================= ИНТЕРАКТИВНЫЙ ФОН (PARTICLES) =================
+        const background = {
+            canvas: null,
+            ctx: null,
+            particles: [],
+            mouse: { x: null, y: null, radius: 150 },
+            isDark: true,
+
+            init() {
+                this.canvas = document.getElementById('bg-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.resize();
+                
+                window.addEventListener('resize', () => this.resize());
+                window.addEventListener('mousemove', (e) => {
+                    this.mouse.x = e.x;
+                    this.mouse.y = e.y;
+                });
+                // Для тач-устройств
+                window.addEventListener('touchmove', (e) => {
+                    this.mouse.x = e.touches[0].clientX;
+                    this.mouse.y = e.touches[0].clientY;
+                });
+
+                this.createParticles();
+                this.animate();
+            },
+
+            updateTheme(isDark) {
+                this.isDark = isDark;
+            },
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                this.createParticles();
+            },
+
+            createParticles() {
+                this.particles = [];
+                // Количество частиц зависит от размера экрана
+                const numberOfParticles = (this.canvas.width * this.canvas.height) / 9000;
+                for (let i = 0; i < numberOfParticles; i++) {
+                    const size = (Math.random() * 3) + 1;
+                    const x = (Math.random() * ((innerWidth - size * 2) - (size * 2)) + size * 2);
+                    const y = (Math.random() * ((innerHeight - size * 2) - (size * 2)) + size * 2);
+                    const directionX = (Math.random() * 2) - 1; // Скорость
+                    const directionY = (Math.random() * 2) - 1;
+                    
+                    this.particles.push({x, y, directionX, directionY, size});
+                }
+            },
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.ctx.clearRect(0, 0, innerWidth, innerHeight);
+                
+                const color = this.isDark ? 'rgba(255,255,255,' : 'rgba(0,0,0,';
+
+                for (let i = 0; i < this.particles.length; i++) {
+                    let p = this.particles[i];
+
+                    // Движение
+                    p.x += p.directionX * 0.5;
+                    p.y += p.directionY * 0.5;
+
+                    // Отскок от краев
+                    if (p.x > this.canvas.width || p.x < 0) p.directionX = -p.directionX;
+                    if (p.y > this.canvas.height || p.y < 0) p.directionY = -p.directionY;
+
+                    // Интерактивность с мышью (разбегание)
+                    let dx = this.mouse.x - p.x;
+                    let dy = this.mouse.y - p.y;
+                    let distance = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (distance < this.mouse.radius) {
+                        if (this.mouse.x < p.x && p.x < this.canvas.width - p.size * 10) p.x += 3;
+                        if (this.mouse.x > p.x && p.x > p.size * 10) p.x -= 3;
+                        if (this.mouse.y < p.y && p.y < this.canvas.height - p.size * 10) p.y += 3;
+                        if (this.mouse.y > p.y && p.y > p.size * 10) p.y -= 3;
+                    }
+
+                    // Рисование точки
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2, false);
+                    this.ctx.fillStyle = color + '0.5)'; // Прозрачность 0.5
+                    this.ctx.fill();
+
+                    // Линии
+                    this.connect(p, i, color);
+                }
+            },
+
+            connect(p, index, colorBase) {
+                for (let j = index; j < this.particles.length; j++) {
+                    let p2 = this.particles[j];
+                    let distance = ((p.x - p2.x) * (p.x - p2.x)) + ((p.y - p2.y) * (p.y - p2.y));
+                    
+                    if (distance < (this.canvas.width/7) * (this.canvas.height/7)) {
+                        let opacity = 1 - (distance / 20000);
+                        if(opacity > 0) {
+                            this.ctx.strokeStyle = colorBase + opacity + ')';
+                            this.ctx.lineWidth = 1;
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(p.x, p.y);
+                            this.ctx.lineTo(p2.x, p2.y);
+                            this.ctx.stroke();
+                        }
+                    }
+                }
+            }
+        };
+
+        // Запуск
+        window.onload = () => game.init();
+
+    </script>
+</body>
+</html>
